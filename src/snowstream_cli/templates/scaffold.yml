@@ -1,0 +1,25 @@
+project:
+  - address: root
+    type: file
+    name: .gitignore
+    template: gitignore.template
+    ext: null
+    git-ignore: null
+  - address: root
+    type: folder
+    name: .locals
+    template: null
+    ext: null
+    git-ignore: all
+  - address: /.locals
+    type: file
+    name: profile
+    template: profile.template
+    ext: yml
+    git-ignore: true
+  - address: root
+    type: folder
+    name: snowstream
+    template: null
+    ext: null
+    git-ignore: null
