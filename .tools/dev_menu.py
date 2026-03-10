@@ -19,10 +19,16 @@ MENU_ITEMS: list[dict] = [
     , {"name": "Build Package", "action": build_package}
 ] if os.path.isdir(".venv") else [{"name": "Run Setup", "action": setup_project}]
 
+# If project has not been initialised yet - force user to initialise
+ACCESSABLE_MENU_ITEMS: list[dict] = (
+    MENU_ITEMS if os.path.isdir(".venv")
+    else [MENU_ITEMS[0]]
+)
+
 def run_option(index: int):
-    if index < 0 or index > len(MENU_ITEMS) - 1:
+    if index < 0 or index > len(ACCESSABLE_MENU_ITEMS) - 1:
         raise IndexError(index)
-    item = MENU_ITEMS[index]
+    item = ACCESSABLE_MENU_ITEMS[index]
 
     if not isinstance(item, dict):
         raise ValueError(item)
@@ -32,7 +38,7 @@ def run_option(index: int):
     input("Complete! press Enter to continue")
 
 def print_items():
-    for i, item in enumerate(MENU_ITEMS):
+    for i, item in enumerate(ACCESSABLE_MENU_ITEMS):
         i = i + 1
         if not isinstance(item, dict):
             continue
@@ -59,6 +65,11 @@ def main():
         except (ValueError, IndexError, KeyError, TypeError):
             print(f"Selection '{resonse}' is invalid")
             input("press enter to continue")
+
+            # Re-initialize menu if .venv now exists
+            global ACCESSABLE_MENU_ITEMS
+            if os.path.isdir(".venv"):
+                ACCESSABLE_MENU_ITEMS = MENU_ITEMS
             continue
 
 if __name__ == "__main__":
