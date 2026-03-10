@@ -35,8 +35,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git add src/pyproject.toml
-          git commit -m "CHORE: bump version ${{ steps.bump.outputs.version_summary }} [skip ci]"
-          git push
+          git diff --staged --quiet && echo "No version change, skipping commit" || git commit -m "CHORE: bump version ${{ steps.bump.outputs.version_summary }} [skip ci]" && git push
         continue-on-error: false
 
       - name: Install dependencies
