@@ -7,6 +7,11 @@ VERSION_FILE = os.path.join("src", "pyproject.toml")
 with open(VERSION_FILE, "r", encoding="utf-8") as f:
     content = f.read()
 current_version = re.search(r'version = "(\d+)\.(\d+)\.(\d+)"', content)
+if current_version:
+    cv_major, cv_minor, cv_patch = map(int, current_version.groups())
+else:
+    cv_major, cv_minor, cv_patch = 0, 0, 0
+current_version: str = f"{cv_major}.{cv_minor}.{cv_patch}"
 major, minor, patch = 0, 0, 0
 
 # Get all commit messages in the branch
@@ -27,6 +32,13 @@ for msg in commit_messages:
     print(f"DEBUG: v{current_version} => v{major}.{minor}.{patch}")
 
 new_version = f"{major}.{minor}.{patch}"
+if cv_major < major:
+    raise Exception(f"Incorrect Version Signature {new_version} < {current_version}")
+if cv_major == major and cv_minor < minor:
+    raise Exception(f"Incorrect Version Signature {new_version} < {current_version}")
+if cv_major == major and cv_minor == minor and cv_patch < patch:
+    raise Exception(f"Incorrect Version Signature {new_version} < {current_version}")
+
 new_content = re.sub(r'version = ".*"', f'version = "{new_version}"', content)
 
 with open(VERSION_FILE, "w", encoding="utf-8") as f:
