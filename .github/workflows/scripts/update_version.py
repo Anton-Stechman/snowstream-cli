@@ -32,16 +32,22 @@ for msg in commit_messages:
     print(f"DEBUG: v{current_version} => v{major}.{minor}.{patch}")
 
 new_version = f"{major}.{minor}.{patch}"
-if cv_major < major:
+if major < cv_major:
     raise Exception(f"Incorrect Version Signature {new_version} < {current_version}")
-if cv_major == major and cv_minor < minor:
+if major == cv_major and minor < cv_minor:
     raise Exception(f"Incorrect Version Signature {new_version} < {current_version}")
-if cv_major == major and cv_minor == minor and cv_patch < patch:
+if major == cv_major and minor == cv_minor and patch < cv_patch:
     raise Exception(f"Incorrect Version Signature {new_version} < {current_version}")
 
+version_summary = f"{current_version} => {new_version}"
 new_content = re.sub(r'version = ".*"', f'version = "{new_version}"', content)
 
 with open(VERSION_FILE, "w", encoding="utf-8") as f:
     f.write(new_content)
 
 print(f"Updated version to {new_version} in {VERSION_FILE}")
+
+# write to GitHub env file
+with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+    f.write(f"version_summary={version_summary}\n")
+    f.write(f"new_version={new_version}\n")
