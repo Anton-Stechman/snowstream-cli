@@ -1,0 +1,5 @@
+streamlit:
+    databases:
+        dev: {{ dev-database }}
+        test: {{ test-database }}
+        prod: {{ prod-database }}

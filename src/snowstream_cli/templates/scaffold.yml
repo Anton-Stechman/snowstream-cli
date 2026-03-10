@@ -1,25 +1,31 @@
-project:
-  - address: root
-    type: file
-    name: .gitignore
-    template: gitignore.template
-    ext: null
-    git-ignore: null
-  - address: root
-    type: folder
-    name: .locals
-    template: null
-    ext: null
-    git-ignore: all
-  - address: /.locals
-    type: file
-    name: profile
-    template: profile.template
-    ext: yml
-    git-ignore: true
-  - address: root
-    type: folder
-    name: snowstream
-    template: null
-    ext: null
-    git-ignore: null
+root:
+  files:
+    - name: .gitignore
+      type: text
+      template: gitignore.template
+      git-ignore: false
+  folders:
+    - name: .locals
+      git-ignore: true
+      files:
+        - name: profile
+          type: yaml
+          template: profile.template
+          git-ignore: false
+      folders: null
+    - name: .manifest
+      git-ignore: true
+      files: null
+      folders: null
+    - name: snowstream
+      files:
+        - name: project
+          type: yaml
+          template: project.template
+          git-ignore: false
+      folders:
+        - name: apps
+          git-ignore: false
+          files: null
+          folders: null
+      git-ignore: false

@@ -1,0 +1,26 @@
+{
+    "appid": {"required": true, "default": null, "options": null}
+    , "name": {"required": true, "default": null, "options": null}
+    , "main-file": {"required:  true, "default": null, "options": null}
+    , "version": {"required": true, "default": null, "options": null}
+    , "schema": {"required": true, "default": null, "options": null}
+    , "compute-pool": {"required": true, "default": null, "options": null}
+    , "runtime": {"required": true, "default": null, "options": null}
+    , "execution-layer": {"required": false, "default": null, "options": ["snowflake", "local"]}
+    , "usage": {"required": false, "default": {
+        "dev": {
+                "roles": []
+                , "users": []
+            }
+        , "test": {
+                "roles": []
+                , "users": []
+            }
+        , "prod": {
+                "roles": []
+                , "users": []
+            }
+        }
+        , "options": null
+    }
+}
