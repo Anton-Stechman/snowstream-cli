@@ -159,3 +159,4 @@ pip install snowstream-framework
 - Added .pylintrc file
 - Added build.yml to .github/worrkflows
 - Added pytest
+- Added DEVELOPER_GUIDE.md & pull_request_template.md
