@@ -2,42 +2,41 @@ name: PR Build & Version
 on:
   pull_request:
     branches: ['main']
+    types: [closed]
+
+permissions:
+  contents: write
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Update version in pyproject.toml
-        if: github.event.pull_request.title != ''
+      - name: Update Package version
+        id: bump
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          WRITE_VERSION: true
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          VERSION_FILE=src/pyproject.toml
-          CURRENT_VERSION=$(grep '^version =' $VERSION_FILE | sed 's/version = "\(.*\)"/\1/')
-          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
-          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          python ./.github/workflows/scripts/update_version.py
+        continue-on-error: false
 
-          if [[ "$PR_TITLE" =~ ^BREAKING-CHANGE ]]; then
-            MAJOR=$((MAJOR+1))
-            MINOR=0
-            PATCH=0
-          elif [[ "$PR_TITLE" =~ ^FEATURE ]]; then
-            MINOR=$((MINOR+1))
-            PATCH=0
-          elif [[ "$PR_TITLE" =~ ^PATCH ]]; then
-            PATCH=$((PATCH+1))
-          fi
-
-          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-          sed -i "s/version = \".*\"/version = \"$NEW_VERSION\"/" $VERSION_FILE
-          echo "Updated version to $NEW_VERSION in $VERSION_FILE"
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git add src/pyproject.toml
+          git diff --staged --quiet && echo "No version change, skipping commit" || git commit -m "CHORE: bump version ${{ steps.bump.outputs.version_summary }} [skip ci]" && git push
         continue-on-error: false
 
       - name: Install dependencies
@@ -59,4 +58,13 @@ jobs:
       - name: Build package
         run: |
           python -m build ./src
+        continue-on-error: false
+
+      - name: Final Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git add src/pyproject.toml
+          git diff --staged --quiet && echo "Nothing to commit, skipping commit" || git commit -m "CHORE: merge into main build [skip ci]" && git push
         continue-on-error: false
