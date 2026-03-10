@@ -36,7 +36,15 @@ jobs:
           fi
 
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-          sed -i "s/version = \".*\"/version = \"$NEW_VERSION\"/" $VERSION_FILE
+          python -c "
+          import re
+          path = 'src/pyproject.toml'
+          with open(path) as f:
+              content = f.read()
+          new_content = re.sub(r'version = \".*\"', f'version = \"{NEW_VERSION}\"', content)
+          with open(path, 'w') as f:
+              f.write(new_content)
+          "
           echo "Updated version to $NEW_VERSION in $VERSION_FILE"
         continue-on-error: false
 
