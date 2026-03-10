@@ -15,8 +15,18 @@ current_version: str = f"{cv_major}.{cv_minor}.{cv_patch}"
 major, minor, patch = 0, 0, 0
 
 # Get all commit messages in the branch
-result = subprocess.run(["git", "log", "--pretty=%B"], capture_output=True, text=True)
+result = subprocess.run(
+    ["git", "log", "origin/main", "--pretty=%B"]
+    , capture_output=True
+    , text=True
+)
+
 commit_messages = result.stdout.splitlines()
+
+# Append PR title from env var
+pr_title = os.environ.get("PR_TITLE", "")
+if pr_title:
+    commit_messages.append(pr_title)
 
 for msg in commit_messages:
     msg = msg.strip()
