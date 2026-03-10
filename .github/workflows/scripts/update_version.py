@@ -18,7 +18,7 @@ major, minor, patch = 0, 0, 0
 result = subprocess.run(["git", "log", "--pretty=%B"], capture_output=True, text=True)
 commit_messages = result.stdout.splitlines()
 
-for msg in ["PATCH", "PATCH", "FEATURE", "BREAKING-CHANGE", "patch", "FEATURE", "Patch", "patch"]:#commit_messages:
+for msg in commit_messages:
     msg = msg.strip()
     if re.match(r"^BREAKING-CHANGE", msg, flags=re.IGNORECASE):
         major += 1
@@ -29,7 +29,7 @@ for msg in ["PATCH", "PATCH", "FEATURE", "BREAKING-CHANGE", "patch", "FEATURE", 
         patch = 0
     elif re.match(r"^PATCH", msg, flags=re.IGNORECASE):
         patch += 1
-    print(f"DEBUG: v{current_version} => v{major}.{minor}.{patch}")
+    print(f"Commit: {msg} (v{current_version} => v{major}.{minor}.{patch})")
 
 new_version = f"{major}.{minor}.{patch}"
 if major < cv_major:
