@@ -1,3 +1,10 @@
+"""
+Deployment utilities used by the Snowstream CLI.
+
+This module contains helpers to generate the `snowstream_manifest.json` artifact
+that describes the apps in a Snowstream project.
+"""
+
 import os
 import json
 from typing import Generator
@@ -24,7 +31,7 @@ def generate_snowstream_manifest(project_path: str, target_app: str | None = Non
     def __parse_app(app_path: str, app_name: str) -> Generator:
         app_yml_path: str = os.path.join(app_path, "app.yml")
         if not os.path.isfile(app_yml_path):
-            yield f"Warning: no app.yml found for app '{app_name}' at {app_yml_path}", MessageType.WARNING
+            yield f"Warning: no app.yml found for app '{app_name}' at {app_yml_path}", MessageType.WARN
             return
 
         app_config: dict = get_file(app_yml_path, parser=yaml.safe_load, internal=False)
@@ -67,7 +74,7 @@ def generate_snowstream_manifest(project_path: str, target_app: str | None = Non
             if os.path.isdir(os.path.join(apps_root, d))
         ]
         if not app_dirs:
-            yield f"No apps found in {apps_root}", MessageType.WARNING
+            yield f"No apps found in {apps_root}", MessageType.WARN
             return
         for app_name in app_dirs:
             app_path: str = os.path.join(apps_root, app_name)

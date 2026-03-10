@@ -1,10 +1,19 @@
-import os
+"""
+Core CLI handlers for the Snowstream CLI.
+
+This module provides the implementation of the `init`, `manifest`, and `run`
+commands exposed by the `snowstream` console script.
+"""
+
 import inspect
 import json
-from typing import Literal, Generator
+import os
+import shutil
+from typing import Generator, Literal
+
 import toml
 import yaml
-import shutil
+
 from snowstream_cli._utilities._deploy import generate_snowstream_manifest
 from snowstream_cli._utilities._backend import (
     dir_exists
@@ -12,14 +21,14 @@ from snowstream_cli._utilities._backend import (
     , save_file
     , header
     , get_abs_path
-    , terminal_print
     , terminal_prompt
     , get_file
     , resolve_template_placeholders
     , MessageType
 )
 
-def initialise(force: bool | None = None, project_dir: str | None = None) -> Generator:
+
+def initialise(force: bool | None = None, project_dir: str | None = None) -> Generator:  # pylint: disable=too-many-branches,too-many-statements
     """
     Initialise new snowstream project
 
@@ -34,7 +43,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
         - `ValueError`: If no value is provided for `project_dir`.
     """
     if not project_dir:
-        raise ValueError(f"No value provided for parameter `project_dir`")
+        raise ValueError("No value provided for parameter `project_dir`")
     project_dir = os.path.join(project_dir, "snowstream")
     yield header("Initialising New Snowstream Project"), MessageType.INFO
 
@@ -42,7 +51,11 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
         if force:
             shutil.rmtree(project_dir)
         else:
-            response: str = terminal_prompt(f"Directory {project_dir} already exists. Overwrite? [Y/N]", expected_values=["y", "n"], message_type=MessageType.WARN)
+            response: str = terminal_prompt(
+                f"Directory {project_dir} already exists. Overwrite? [Y/N]"
+                , expected_values=["y", "n"]
+                , message_type=MessageType.WARN
+            )
             if response == "n":
                 yield f"'{response}' selected, cannot resume initialisation", MessageType.WARN
                 return
@@ -60,7 +73,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
         return content
 
     def __process_node(node: dict, current_path: str) -> Generator:
-        TYPE_EXTENSIONS: dict = {
+        type_extensions: dict[str, str | None] = {
             "yaml": "yml"
             , "toml": "toml"
             , "json": "json"
@@ -73,7 +86,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
             file_type: str = file.get("type")
             template_name: str = file.get("template")
 
-            ext = TYPE_EXTENSIONS.get(file_type)
+            ext = type_extensions.get(file_type)
             if ext:
                 full_name = f"{file_name}.{ext}"
             else:
@@ -88,7 +101,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
             else:
                 content = ""
 
-            with open(file_path, "w") as f:
+            with open(file_path, "w",encoding="utf-8") as f:
                 if file_type == "yaml":
                     yaml.dump(yaml.safe_load(content), f, sort_keys=False)
                 elif file_type == "toml":
@@ -121,10 +134,11 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
     # write .gitignore once after full tree is processed
     gitignore_path = os.path.join(fullpath, ".gitignore")
     if os.path.exists(gitignore_path):
-        gitignore_content = open(gitignore_path).read()
+        with open(gitignore_path, "r", encoding="utf-8") as f:
+            gitignore_content = f.read()
         ignore_block = "\n".join(gitignore_entries)
         gitignore_content = gitignore_content.replace("{{ ignore }}", ignore_block)
-        with open(gitignore_path, "w") as f:
+        with open(gitignore_path, "w", encoding="utf-8") as f:
             f.write(gitignore_content)
         yield f"  [.gitignore] updated with {len(gitignore_entries)} entries", MessageType.INFO
 
@@ -138,7 +152,8 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
     ### Inputs
         - project_dir (optional) `<type=str | None>` <default=`None`>: Path to the project directory. Defaults to the current working directory if not provided.
         - target_app (optional) `<type=str | None>` <default=`None`>: The target app to generate the manifest for. Defaults to `"all"` if not provided.
-        - call_type (optional) `<type=Literal["cli", "internal"]>` <default=`"cli"`>: When `"cli"`, a formatted header and input summary are yielded before processing. When `"internal"`, output is suppressed and only manifest data and errors are yielded.
+        - call_type (optional) `<type=Literal["cli", "internal"]>` <default=`"cli"`>: When `"cli"`, a formatted header and input summary are yielded before processing.
+            When `"internal"`, output is suppressed and only manifest data and errors are yielded.
 
     ### Returns
         `Generator`: Yields `tuple[str, MessageType]` pairs of `(message, message_type)` for each step. On success, the final yield is the manifest path with `MessageType.SUCCESS`.
@@ -151,7 +166,7 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
         project_dir = os.path.join(project_dir, "snowstream")
     target_app = target_app or "all"
     local_vars = locals()
-    MANIFEST_DATA: dict | None = None
+    manifest_data: dict | None = None
     if call_type == "cli":
         yield header("Generating snowstream_manifest.json"), MessageType.INFO
         for name in inspect.signature(manifest).parameters:
@@ -160,19 +175,19 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
 
     for response, status in generate_snowstream_manifest(project_dir, target_app):
         if isinstance(response, dict):
-            MANIFEST_DATA = response
+            manifest_data = response
             break
         if not isinstance(status, MessageType) or not isinstance(response, str):
             yield f"ERROR: Unexpected Response Signature. Expected <{str}, {MessageType}> got <{type(response)}, {type(status)}>", MessageType.ERROR
             return
         yield response, status
 
-    if not isinstance(MANIFEST_DATA, dict):
-        raise TypeError(f"exoected type {dict} got {type(MANIFEST_DATA)} for {MANIFEST_DATA}")
+    if not isinstance(manifest_data, dict):
+        raise TypeError(f"expected type {dict} got {type(manifest_data)} for {manifest_data}")
 
     manifest_path = os.path.join(project_dir, ".manifest")
 
-    if save_file(manifest_path, "snowstream_manifest.json", content=MANIFEST_DATA, parser=lambda x: json.dumps(x, indent=4)):
+    if save_file(manifest_path, "snowstream_manifest.json", content=manifest_data, parser=lambda x: json.dumps(x, indent=4)):
         yield f"Manifest Created at {manifest_path}", MessageType.SUCCESS
         return
 
@@ -193,6 +208,8 @@ def run(project_dir: str | None = None, target_app: str | None = None, target: L
     ### Raises
         None
     """
+    # placeholder usage for pylint
+    print(target)
     __project_dir: str = project_dir if project_dir != os.getcwd() else None
     project_dir = project_dir or os.getcwd()
     if project_dir == os.getcwd():

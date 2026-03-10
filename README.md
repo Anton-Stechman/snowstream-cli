@@ -1,5 +1,7 @@
 # snowstream-cli
+**version:** 0.0.0a (Alpha)
 
+___
 **Snowstream CLI** is a lightweight command-line toolkit for bootstrapping and working with Snowstream projects.
 
 It provides:
@@ -133,7 +135,7 @@ Key runtime dependencies (see `pyproject.toml`):
 
 ## 🪪 License
 
-This project is published under the terms of the **Apache 2.0** (see `LICENSE`).
+This project is published under the terms of the **Apache 2.0 License** (see `LICENSE`).
 
 
 ##  Related Projects
@@ -147,5 +149,11 @@ pip install snowstream-framework
 ```
 
 ## Change Log
-**version 0.0.0a:**
--
+
+### version 0.0.0a (initial alpha)
+- Initial project scaffold and CLI scaffolding.
+- Added core CLI commands: `init`, `manifest`, and `run`.
+- Implemented project scaffolding templates under `src/snowstream_cli/templates/`.
+- Added `snowstream_cli.main` entry point and argument parsing.
+- Added manifest generation and build workflow.
+- Added .pylintrc file

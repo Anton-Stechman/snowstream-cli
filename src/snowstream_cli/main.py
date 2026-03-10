@@ -1,3 +1,15 @@
+"""
+Entrypoint module for the Snowstream CLI.
+
+This module is responsible for parsing command-line arguments and dispatching
+commands to the underlying Snowstream CLI handlers.
+
+Available commands:
+- init: scaffold a new Snowstream project
+- manifest: generate a snowstream_manifest.json for a project
+- run: validate and build a target environment manifest
+"""
+
 import os
 import subprocess
 import argparse
@@ -76,13 +88,24 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "init":
-        for message, status in initialise(force=args.force, project_dir=args.project_dir):
+        for message, status in initialise(
+            force=args.force
+            , project_dir=args.project_dir
+        ):
             terminal_print(message, message_type=status)
     elif args.command == "run":
-        for message, status in run(project_dir=args.project_dir, target_app=args.app, target=str(args.target).lower()):
+        for message, status in run(
+            project_dir=args.project_dir
+            , target_app=args.app
+            , target=str(args.target).lower()
+        ):
             terminal_print(message, message_type=status)
     elif args.command == "manifest":
-        for message, status in manifest(project_dir=args.project_dir, target_app=args.app, call_type="cli"):
+        for message, status in manifest(
+            project_dir=args.project_dir
+            , target_app=args.app
+            , call_type="cli"
+        ):
             terminal_print(message, message_type=status)
     elif args.command is None:
         parser.print_help()

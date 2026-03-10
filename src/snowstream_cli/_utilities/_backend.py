@@ -1,16 +1,23 @@
+"""Utility helpers for the Snowstream CLI.
+
+This module provides file system helpers, formatted terminal output, and
+simple template resolution used across the Snowstream CLI.
+"""
+
+import json
 import os
 import re
-import json
 from enum import Enum
 from importlib.resources import files
-from typing import Literal, Any, Callable
-import yaml
+from typing import Any, Callable, Literal
+
 import toml
+import yaml
 from colorama import Fore, Style, init as colorama_init
 
 colorama_init(autoreset=True)
 
-COLOR_OPTIONS: dict = {
+COLOR_OPTIONS: dict[str, str] = {
     "info": Fore.WHITE
     , "warning": Fore.YELLOW
     , "error": Fore.RED
@@ -18,6 +25,23 @@ COLOR_OPTIONS: dict = {
 }
 
 class MessageType(Enum):
+    """
+    MessageType: Used for defining which color option to use for Terminal text
+
+    ### Attributes
+        - INFO: color = `Fore.WHITE`
+        - WARN: color = `Fore.YELLOW`
+        - ERROR: color = `Fore.RED`
+        - SUCCESS: color = `Fore.GREEN`
+
+    ### Usage
+    ```python
+    from snowstream_cli._utilities._backend import MessageType
+
+    if __name__ == "__main__":
+        print(f"{MessageType.SUCCESS.color()}Success Message in GREEN")
+    ```
+    """
     INFO = "info"
     WARN = "warning"
     ERROR = "error"
@@ -27,6 +51,7 @@ class MessageType(Enum):
         return str(self.value)
 
     def color(self):
+        """Returns a Fore color value"""
         return COLOR_OPTIONS[self.value]
 
 class DirectoryNotFoundError(FileNotFoundError):
@@ -150,7 +175,6 @@ def terminal_print(*args: str, message_type: MessageType = MessageType.INFO) -> 
     """
     for arg in args:
         print(f"{message_type.color()}{arg}{Style.RESET_ALL}")
-    return None
 
 def save_file(*args: str, content: Any, auto_create: bool = True, parser: Callable = str) -> bool:
     """
@@ -173,7 +197,9 @@ def save_file(*args: str, content: Any, auto_create: bool = True, parser: Callab
         parent: str = os.path.dirname(filepath)
         if not dir_exists(parent):
             if not auto_create:
-                raise DirectoryNotFoundError(f"{parent} does not exist, use auto_create=True to create it")
+                raise DirectoryNotFoundError(
+                    f"{parent} does not exist, use auto_create=True to create it"
+                )
             os.makedirs(parent, exist_ok=True)
         if isinstance(content, dict):
             if parser in (json.dumps, yaml.dump, toml.dumps):
@@ -182,18 +208,18 @@ def save_file(*args: str, content: Any, auto_create: bool = True, parser: Callab
                 serialised: str = parser(content)  # trust the caller
         else:
             serialised: str = parser(content)
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             f.write(serialised)
         return True
     except DirectoryNotFoundError:
         raise
-    except Exception:
+    except (OSError, TypeError, ValueError):
         return False
 
 def terminal_prompt(
         prompt: str
         , expected_type: type = str
-        , expected_values: list[str] = ["y", "n"]
+        , expected_values: list[str] | None = None
         , case: Callable = str.lower
         , message_type: MessageType = MessageType.INFO
         , on_error: Literal["raise", "ignore"] = "raise") -> Any:
@@ -202,10 +228,14 @@ def terminal_prompt(
 
     ### Inputs
         - prompt `<type=str>`: The message displayed to the user before the input cursor.
-        - expected_type (optional) `<type=type>` <default=`str`>: The expected type of the response. If the raw input is not of this type, a cast is attempted.
-        - expected_values (optional) `<type=list[str]>` <default=`["y", "n"]`>: Allowlist of valid responses. If the response is not in this list, `InvalidInput` is raised.
-        - case (optional) `<type=Callable>` <default=`str.lower`>: A string method applied to the raw input before validation (e.g. `str.lower`, `str.upper`).
-        - message_type (optional) `<type=Literal["info", "warning", "error", "success"]>` <default=`"info"`>: Controls the colour of the prompt text.
+        - expected_type (optional) `<type=type>` <default=`str`>:
+            The expected type of the response. If the raw input is not of this type, a cast is attempted.
+        - expected_values (optional) `<type=list[str] | None>` <default=`None`>:
+            Allowlist of valid responses. If the response is not in this list, `InvalidInput` is raised.
+        - case (optional) `<type=Callable>` <default=`str.lower`>:
+            A string method applied to the raw input before validation (e.g. `str.lower`, `str.upper`).
+        - message_type (optional) `<type=MessageType>` <default=`MessageType.INFO`>:
+            Controls the colour of the prompt text.
 
     ### Returns
         `Any`: The validated and type-coerced user response.
@@ -214,15 +244,19 @@ def terminal_prompt(
         - `InvalidInput`: If the response cannot be coerced to `expected_type`, or if the response is not in `expected_values`.
         - `SnowstreamInternalError`: If `message_type` is not a valid key in the colour options map.
     """
+    expected_values = expected_values or ["y", "n"]
+
     response = input(f"{message_type.color()}{prompt}: {Style.RESET_ALL}").strip()
     response = case(response)
     if not isinstance(response, expected_type) and on_error == "raise":
         try:
             response = expected_type(response)
-        except (ValueError, Exception) as ex:
-            raise InvalidInput(f"Excepted type {expected_type} for value {response}, got {type(response)}")
+        except (ValueError, TypeError) as ex:
+            raise InvalidInput(
+                f"Expected type {expected_type} for value {response}, got {type(response)}"
+            ) from ex
     if response not in [case(v) for v in expected_values] and on_error == "raise":
-        raise InvalidInput(f"Excepted values {expected_values} got {response}")
+        raise InvalidInput(f"Expected values {expected_values} got {response}")
     return response
 
 def get_file(*args: str, parser: Callable = str, internal: bool = True) -> Any:
@@ -230,9 +264,13 @@ def get_file(*args: str, parser: Callable = str, internal: bool = True) -> Any:
     Read a file and return its content.
 
     ### Inputs
-        - *args `<type=str>`: Path components to the target file. If `internal=True`, paths are relative to the `snowstream_cli` package root (e.g. `"templates"`, `"structure.yml"`). If `internal=False`, components are joined as a standard filesystem path.
-        - parser (optional) `<type=Callable>` <default=`str`>: A callable applied to the raw file content before returning. Use `yaml.safe_load` for YAML, `json.loads` for JSON, etc.
-        - internal (optional) `<type=bool>` <default=`True`>: When `True`, resolves the path relative to the `snowstream_cli` package root. When `False`, resolves as an absolute or relative filesystem path.
+        - *args `<type=str>`:
+            Path components to the target file. If `internal=True`, paths are relative to the `snowstream_cli` package root (e.g. `"templates"`, `"structure.yml"`).
+            If `internal=False`, components are joined as a standard filesystem path.
+        - parser (optional) `<type=Callable>` <default=`str`>:
+            A callable applied to the raw file content before returning. Use `yaml.safe_load` for YAML, `json.loads` for JSON, etc.
+        - internal (optional) `<type=bool>` <default=`True`>:
+            When `True`, resolves the path relative to the `snowstream_cli` package root. When `False`, resolves as an absolute or relative filesystem path.
 
     ### Returns
         `Any`: The file content after applying `parser`.
@@ -244,7 +282,7 @@ def get_file(*args: str, parser: Callable = str, internal: bool = True) -> Any:
         content = files("snowstream_cli").joinpath(*args).read_text()
     else:
         path: str = os.path.join(*args)
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             content = f.read()
     return parser(content)
 
