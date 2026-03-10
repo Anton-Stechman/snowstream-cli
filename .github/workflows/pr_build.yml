@@ -1,9 +1,9 @@
 name: PR Build & Version
 on:
-  push:
-    branches: ['**']
   pull_request:
     branches: ['main']
+    types: [closed]
+
 permissions:
   contents: write
 
@@ -25,9 +25,10 @@ jobs:
         id: bump
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          WRITE_VERSION: true
         run: |
           python ./.github/workflows/scripts/update_version.py
-        # continue-on-error: false
+        continue-on-error: false
 
       - name: Commit version bump
         run: |
@@ -57,4 +58,13 @@ jobs:
       - name: Build package
         run: |
           python -m build ./src
+        continue-on-error: false
+
+      - name: Final Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git add src/pyproject.toml
+          git diff --staged --quiet && echo "Nothing to commit, skipping commit" || git commit -m "CHORE: merge into main build [skip ci]" && git push
         continue-on-error: false

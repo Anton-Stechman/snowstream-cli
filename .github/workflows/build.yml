@@ -1,25 +1,38 @@
 name: CI
 
-# on:
-#   push:
-#     branches: ['**']
+on:
+  push:
+    branches: ['**']
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      - name: Update Package version
+        id: bump
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          WRITE_VERSION: FALSE
+        run: |
+          python ./.github/workflows/scripts/update_version.py
+        continue-on-error: false
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip==25.3
           pip install -r requirements.txt
           pip install -e src
+        continue-on-error: false
 
       - name: Lint with pylint
         run: |

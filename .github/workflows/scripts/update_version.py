@@ -25,6 +25,8 @@ commit_messages = result.stdout.splitlines()
 
 # Append PR title from env var
 pr_title = os.environ.get("PR_TITLE", "")
+write_to_file: bool = os.environ.get("WRITE_VERSION", "true").upper() == "TRUE"
+
 if pr_title:
     commit_messages.append(pr_title)
 
@@ -55,8 +57,9 @@ if major == cv_major and minor == cv_minor and patch < cv_patch:
 version_summary = f"{current_version} => {new_version}"
 new_content = re.sub(r'version = ".*"', f'version = "{new_version}"', content)
 
-with open(VERSION_FILE, "w", encoding="utf-8") as f:
-    f.write(new_content)
+if write_to_file:
+    with open(VERSION_FILE, "w", encoding="utf-8") as f:
+        f.write(new_content)
 
 print(f"Updated version to {new_version} in {VERSION_FILE}")
 
