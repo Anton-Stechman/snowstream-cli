@@ -1,0 +1,7 @@
+account: {{ account }}
+user: {{ user }}
+role: {{ role }}
+database: {{ database }}
+schema: {{ schema }}
+warehouse: {{ warehouse }}
+key-service: SNOWFLAKE.API.KEY
