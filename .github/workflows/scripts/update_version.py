@@ -30,16 +30,19 @@ if pr_title:
 
 for msg in commit_messages:
     msg = msg.strip()
+    new_version = f"{major}.{minor}.{patch}"
     if re.match(r"^BREAKING-CHANGE", msg, flags=re.IGNORECASE):
         major += 1
         minor = 0
         patch = 0
+        print(f"Commit: {msg} (v{current_version} => v{new_version})")
     elif re.match(r"^FEATURE", msg, flags=re.IGNORECASE):
         minor += 1
         patch = 0
+        print(f"Commit: {msg} (v{current_version} => v{new_version})")
     elif re.match(r"^PATCH", msg, flags=re.IGNORECASE):
         patch += 1
-    print(f"Commit: {msg} (v{current_version} => v{major}.{minor}.{patch})")
+        print(f"Commit: {msg} (v{current_version} => v{new_version})")
 
 new_version = f"{major}.{minor}.{patch}"
 if major < cv_major:
