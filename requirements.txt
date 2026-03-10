@@ -3,3 +3,5 @@ snowflake-snowpark-python==1.41.0
 keyring==25.7.0
 build==1.4.0
 argparse==1.4.0
+pylint==4.0.2
+pytest==9.0.2
