@@ -15,39 +15,61 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Update version in pyproject.toml
-        if: github.event.pull_request.title != ''
+      - name: Update Package version
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
+          COMMIT_MSG=$(git log -1 --pretty=%B)
           VERSION_FILE=src/pyproject.toml
           CURRENT_VERSION=$(grep '^version =' $VERSION_FILE | sed 's/version = "\(.*\)"/\1/')
           MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
           MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
           PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
 
-          if [[ "$PR_TITLE" =~ ^BREAKING-CHANGE ]]; then
+          if [[ "$COMMIT_MSG" =~ ^BREAKING-CHANGE ]]; then
             MAJOR=$((MAJOR+1))
             MINOR=0
             PATCH=0
-          elif [[ "$PR_TITLE" =~ ^FEATURE ]]; then
+          elif [[ "$COMMIT_MSG" =~ ^FEATURE ]]; then
             MINOR=$((MINOR+1))
             PATCH=0
-          elif [[ "$PR_TITLE" =~ ^PATCH ]]; then
+          elif [[ "$COMMIT_MSG" =~ ^PATCH ]]; then
             PATCH=$((PATCH+1))
           fi
 
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-          python -c "
-          import re
-          path = 'src/pyproject.toml'
-          with open(path) as f:
-              content = f.read()
-          new_content = re.sub(r'version = \".*\"', f'version = \"{NEW_VERSION}\"', content)
-          with open(path, 'w') as f:
-              f.write(new_content)
-          "
+          sed -i "s/version = \".*\"/version = \"$NEW_VERSION\"/" $VERSION_FILE
           echo "Updated version to $NEW_VERSION in $VERSION_FILE"
+      # - name: Update version in pyproject.toml
+      #   if: github.event.pull_request.title != ''
+      #   run: |
+      #     PR_TITLE="${{ github.event.pull_request.title }}"
+      #     VERSION_FILE=src/pyproject.toml
+      #     CURRENT_VERSION=$(grep '^version =' $VERSION_FILE | sed 's/version = "\(.*\)"/\1/')
+      #     MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+      #     MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+      #     PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+
+      #     if [[ "$PR_TITLE" =~ ^BREAKING-CHANGE ]]; then
+      #       MAJOR=$((MAJOR+1))
+      #       MINOR=0
+      #       PATCH=0
+      #     elif [[ "$PR_TITLE" =~ ^FEATURE ]]; then
+      #       MINOR=$((MINOR+1))
+      #       PATCH=0
+      #     elif [[ "$PR_TITLE" =~ ^PATCH ]]; then
+      #       PATCH=$((PATCH+1))
+      #     fi
+
+      #     NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+      #     python -c "
+      #     import re
+      #     path = 'src/pyproject.toml'
+      #     with open(path) as f:
+      #         content = f.read()
+      #     new_content = re.sub(r'version = \".*\"', f'version = \"{NEW_VERSION}\"', content)
+      #     with open(path, 'w') as f:
+      #         f.write(new_content)
+      #     "
+      #     echo "Updated version to $NEW_VERSION in $VERSION_FILE"
         continue-on-error: false
 
       - name: Install dependencies
