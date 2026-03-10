@@ -157,3 +157,5 @@ pip install snowstream-framework
 - Added `snowstream_cli.main` entry point and argument parsing.
 - Added manifest generation and build workflow.
 - Added .pylintrc file
+- Added build.yml to .github/worrkflows
+- Added pytest
