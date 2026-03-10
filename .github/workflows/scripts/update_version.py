@@ -18,7 +18,7 @@ major, minor, patch = 0, 0, 0
 result = subprocess.run(["git", "log", "--pretty=%B"], capture_output=True, text=True)
 commit_messages = result.stdout.splitlines()
 
-for msg in commit_messages:
+for msg in ["PATCH", "PATCH", "FEATURE", "BREAKING-CHANGE", "patch", "FEATURE", "Patch", "patch"]:#commit_messages:
     msg = msg.strip()
     if re.match(r"^BREAKING-CHANGE", msg, flags=re.IGNORECASE):
         major += 1
