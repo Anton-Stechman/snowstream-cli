@@ -2,39 +2,34 @@ import os
 import subprocess
 import re
 
-# Get branch name from environment or default to main
-branch = os.environ.get("GITHUB_REF", "main").split("/")[-1]
-
-# Get all PR commit messages for the branch
-git_log_cmd = [
-    "git", "log", branch, "--pretty=%B"
-]
-result = subprocess.run(git_log_cmd, capture_output=True, text=True)
-commit_messages = result.stdout.splitlines()
-
+# Get current version from pyproject.toml
+VERSION_FILE = os.path.join("src", "pyproject.toml")
+with open(VERSION_FILE, "r", encoding="utf-8") as f:
+    content = f.read()
+current_version = re.search(r'version = "(\d+)\.(\d+)\.(\d+)"', content)
 major, minor, patch = 0, 0, 0
+
+# Get all commit messages in the branch
+result = subprocess.run(["git", "log", "--pretty=%B"], capture_output=True, text=True)
+commit_messages = result.stdout.splitlines()
 
 for msg in commit_messages:
     msg = msg.strip()
-    if re.match(r"^BREAKING-CHANGE", msg):
+    if re.match(r"^BREAKING-CHANGE", msg, flags=re.IGNORECASE):
         major += 1
         minor = 0
         patch = 0
-    elif re.match(r"^FEATURE", msg):
+    elif re.match(r"^FEATURE", msg, flags=re.IGNORECASE):
         minor += 1
         patch = 0
-    elif re.match(r"^PATCH", msg):
+    elif re.match(r"^PATCH", msg, flags=re.IGNORECASE):
         patch += 1
+    print(f"DEBUG: v{current_version} => v{major}.{minor}.{patch}")
 
-version = f"{major}.{minor}.{patch}"
-print(f"Calculated version: {version}")
+new_version = f"{major}.{minor}.{patch}"
+new_content = re.sub(r'version = ".*"', f'version = "{new_version}"', content)
 
-# Optionally update pyproject.toml
-pyproject_path = os.path.join("src", "pyproject.toml")
-if os.path.exists(pyproject_path):
-    with open(pyproject_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    content = re.sub(r'version = ".*"', f'version = "{version}"', content)
-    with open(pyproject_path, "w", encoding="utf-8") as f:
-        f.write(content)
-    print(f"Updated version in {pyproject_path}")
+with open(VERSION_FILE, "w", encoding="utf-8") as f:
+    f.write(new_content)
+
+print(f"Updated version to {new_version} in {VERSION_FILE}")
