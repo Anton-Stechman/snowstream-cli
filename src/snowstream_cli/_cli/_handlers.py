@@ -41,6 +41,7 @@ def version(verbose: bool = False) -> Generator:
     ### Raises
         None
     """
+    yield header("Displaying Version: snowstream-cli"), MessageType.INFO
 
     meta = metadata("snowstream-cli")
     if verbose:
@@ -51,8 +52,7 @@ def version(verbose: bool = False) -> Generator:
         yield f"Author:   {meta['Author-email']}", MessageType.INFO
         yield f"License:  {meta['License-Expression']}", MessageType.INFO
         return
-    yield f"v{meta['Version']}", MessageType.INFO
-
+    yield f"snowstream-cli v{meta['Version']}", MessageType.INFO
 
 def initialise(force: bool | None = None, project_dir: str | None = None) -> Generator:  # pylint: disable=too-many-branches,too-many-statements
     """
