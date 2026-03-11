@@ -7,9 +7,10 @@ name = "snowstream-cli"
 version = "0.3.1"
 description = "Snowstream CLI Library"
 readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.11,<3.12"
 authors = [
-  { name="Anton Stechman", email="stechman.ab@gmail.com" }
+  {name = "Anton Stechman", email = "stechman.ab@gmail.com"}
 ]
 dependencies = [
     "snowflake-cli==3.15.0"
