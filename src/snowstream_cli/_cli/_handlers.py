@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 from typing import Generator, Literal
+from importlib.metadata import metadata
 
 import toml
 import yaml
@@ -27,6 +28,31 @@ from snowstream_cli._utilities._backend import (
     , MessageType
 )
 
+def version(verbose: bool = False) -> Generator:
+    """
+    Display the installed version of snowstream-cli.
+
+    ### Inputs
+        - verbose (optional) `<type=bool>` <default=`False`>: When `True`, displays additional package metadata.
+
+    ### Returns
+        `Generator`: Yields `tuple[str, MessageType]` pairs.
+
+    ### Raises
+        None
+    """
+
+    meta = metadata("snowstream-cli")
+    if verbose:
+        yield f"Name:     {meta['Name']}", MessageType.INFO
+        yield f"Summary:  {meta['Summary']}", MessageType.INFO
+        yield f"Version:  {meta['Version']}", MessageType.INFO
+        yield f"Python:   {meta['Requires-Python']}", MessageType.INFO
+        yield f"Author:   {meta['Author-email']}", MessageType.INFO
+        yield f"License:  {meta['License-Expression']}", MessageType.INFO
+        return
+    yield f"v{meta['Version']}", MessageType.INFO
+
 
 def initialise(force: bool | None = None, project_dir: str | None = None) -> Generator:  # pylint: disable=too-many-branches,too-many-statements
     """
@@ -37,7 +63,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
         - project_dir (optional) `<type=str | None>` <default=`None`>: Target directory path.
 
     ### Returns
-        `None`
+        `Generator`: Yields `tuple[str, MessageType]` pairs.
 
     ### Raises
         - `ValueError`: If no value is provided for `project_dir`.
@@ -156,7 +182,7 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
             When `"internal"`, output is suppressed and only manifest data and errors are yielded.
 
     ### Returns
-        `Generator`: Yields `tuple[str, MessageType]` pairs of `(message, message_type)` for each step. On success, the final yield is the manifest path with `MessageType.SUCCESS`.
+        `Generator`: Yields `tuple[str, MessageType]` pairs.
 
     ### Raises
         - `TypeError`: If `generate_snowstream_manifest` does not return a `dict` as its final response.
@@ -203,7 +229,7 @@ def run(project_dir: str | None = None, target_app: str | None = None, target: L
         - target (optional) `<type=Literal["dev", "test", "prod"]>` <default=`"dev"`>: The target environment to build against.
 
     ### Returns
-        `Generator`: Yields `tuple[str, MessageType]` pairs of `(message, message_type)` for each build step.
+        `Generator`: Yields `tuple[str, MessageType]` pairs.
 
     ### Raises
         None

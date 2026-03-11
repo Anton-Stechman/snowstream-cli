@@ -13,7 +13,7 @@ Available commands:
 import os
 import subprocess
 import argparse
-from snowstream_cli._cli._handlers import initialise, run, manifest
+from snowstream_cli._cli._handlers import initialise, run, manifest, version
 from snowstream_cli._utilities._backend import terminal_print
 
 def main() -> None:
@@ -31,6 +31,7 @@ def main() -> None:
     init_parser = subparsers.add_parser("init", help="Initialise a new snowstream project")
     run_parser = subparsers.add_parser("run", help="Run a build")
     manifest_parser = subparsers.add_parser("manifest", help="Generate snowstream manifest")
+    version_parser = subparsers.add_parser("version", help="Display library version")
 
     init_parser.add_argument(
         "--force"
@@ -85,9 +86,21 @@ def main() -> None:
         , help="Target app to generate manifest for (default: all)"
     )
 
+    version_parser.add_argument(
+        "--verbose", "-v"
+        , action="store_true"
+        , default=False
+        , help="Display verbose version information"
+    )
+
     args = parser.parse_args()
 
-    if args.command == "init":
+    if args.command == "version":
+        for message, status in version(
+            verbose=args.verbose
+        ):
+            terminal_print(message, message_type=status)
+    elif args.command == "init":
         for message, status in initialise(
             force=args.force
             , project_dir=args.project_dir
