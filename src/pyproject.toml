@@ -19,7 +19,7 @@ dependencies = [
     , "keyring==25.7.0"
     , "PyYAML==6.0.2"
     , "toml==0.10.2"
-    , "cryptography==43.0.1"
+    , "cryptography==46.0.5"
     , "asn1crypto==1.5.1"
     , "streamlit>=1.46.0"
     , "packaging==25.0"
