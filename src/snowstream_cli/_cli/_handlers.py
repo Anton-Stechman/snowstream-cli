@@ -9,7 +9,7 @@ import inspect
 import json
 import os
 import shutil
-from typing import Generator, Literal
+from typing import Generator, Literal, Callable
 from importlib.metadata import metadata
 
 import toml
@@ -18,15 +18,26 @@ import yaml
 from snowstream_cli._backend._deploy import generate_snowstream_manifest
 from snowstream_cli._backend._util import (
     dir_exists
-    , file_exists
     , save_file
     , header
     , get_abs_path
+    , get_project_dir
     , terminal_prompt
     , get_file
+    , is_valid_snowstream_project
     , resolve_template_placeholders
     , MessageType
 )
+
+def _cli_header(func: Callable, frame) -> Generator:
+    """
+    """
+    caller_locals = frame.f_locals
+    yield f"> cmd: {func.__name__}", MessageType.INFO
+    for name in inspect.signature(func).parameters:
+        yield f">> {name}: {caller_locals.get(name)}", MessageType.INFO
+    yield f"\nBegin...", MessageType.INFO
+    yield "=" * 30, MessageType.INFO
 
 def version(verbose: bool = False) -> Generator:
     """
@@ -42,6 +53,7 @@ def version(verbose: bool = False) -> Generator:
         None
     """
     yield header("Displaying Version: snowstream-cli"), MessageType.INFO
+    yield from _cli_header(version, inspect.currentframe())
 
     meta = metadata("snowstream-cli")
     if verbose:
@@ -70,9 +82,8 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
     """
     if not project_dir:
         raise ValueError("No value provided for parameter `project_dir`")
-    project_dir = os.path.join(project_dir, "snowstream")
     yield header("Initialising New Snowstream Project"), MessageType.INFO
-
+    yield from _cli_header(initialise, inspect.currentframe())
     if dir_exists(project_dir):
         if force:
             shutil.rmtree(project_dir)
@@ -187,17 +198,13 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
     ### Raises
         - `TypeError`: If `generate_snowstream_manifest` does not return a `dict` as its final response.
     """
-    project_dir = project_dir or os.getcwd()
-    if project_dir == os.getcwd():
-        project_dir = os.path.join(project_dir, "snowstream")
+    project_dir = get_project_dir(project_dir)
     target_app = target_app or "all"
     local_vars = locals()
     manifest_data: dict | None = None
     if call_type == "cli":
         yield header("Generating snowstream_manifest.json"), MessageType.INFO
-        for name in inspect.signature(manifest).parameters:
-            yield f"> {name}: {local_vars[name]}", MessageType.INFO
-        yield "Begin...", MessageType.INFO
+        yield from _cli_header(manifest, inspect.currentframe())
 
     for response, status in generate_snowstream_manifest(project_dir, target_app):
         if isinstance(response, dict):
@@ -236,26 +243,15 @@ def run(project_dir: str | None = None, target_app: str | None = None, target: L
     ### Raises
         None
     """
-    # placeholder usage for pylint
-    print(target)
-    __project_dir: str = project_dir if project_dir != os.getcwd() else None
-    project_dir = project_dir or os.getcwd()
-    if project_dir == os.getcwd():
-        project_dir = os.path.join(project_dir, "snowstream")
+    project_dir = get_project_dir(project_dir)
     target_app = target_app or "all"
-    local_vars = locals()
 
     yield header("Running Snowstream build"), MessageType.INFO
-    for name in inspect.signature(run).parameters:
-        yield f"> {name}: {local_vars[name]}", MessageType.INFO
-    yield "Begin...", MessageType.INFO
+    yield from _cli_header(run, inspect.currentframe())
 
-    if not dir_exists(project_dir) or not file_exists(project_dir, "project.yml"):
+    if not is_valid_snowstream_project(project_dir):
         yield f"ERROR: could not find snowstream project in {project_dir}", MessageType.ERROR
-        if __project_dir:
-            yield f"Run: 'snowstream init --project-dir {__project_dir}' to create a new project", MessageType.WARN
-        else:
-            yield "Run: 'snowstream init' to create a new project", MessageType.WARN
+        yield "Run: 'snowstream init' to create a new project", MessageType.WARN
         return
     yield "Building snowstream_manifest.json", MessageType.INFO
     for response, status in manifest(project_dir, target_app, "internal"):

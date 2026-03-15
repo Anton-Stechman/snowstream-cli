@@ -156,7 +156,7 @@ def header(text: str) -> str:
         None
     """
     banner: str = "=" * 40
-    return f"{banner}\n{text}\n{banner}"
+    return f"{Fore.CYAN}{banner}\n{text}\n{banner}{Fore.WHITE}"
 
 def file_exists(*args, filepath: str | None = None) -> bool:
     """
