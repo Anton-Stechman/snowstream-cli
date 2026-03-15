@@ -37,7 +37,7 @@ major, minor, patch = 0, 0, 0
 
 # Get all commit messages in the branch
 result = subprocess.run(
-    ["git", "log", "origin/main", "--pretty=%B"]
+    ["git", "log", "origin/main", "--pretty=%B", "--reverse"]
     , capture_output=True
     , text=True
 )
@@ -54,16 +54,16 @@ if pr_title:
 for msg in commit_messages:
     msg = msg.strip()
     new_version = f"{major}.{minor}.{patch}"
-    if re.match(r"^BREAKING-CHANGE:", msg, flags=re.IGNORECASE):
+    if re.match(r"BREAKING-CHANGE:", msg, flags=re.IGNORECASE):
         major += 1
         minor = 0
         patch = 0
         print(f"Commit: {msg} (v{current_version} => v{new_version})")
-    elif re.match(r"^FEATURE:", msg, flags=re.IGNORECASE):
+    elif re.match(r"FEATURE:", msg, flags=re.IGNORECASE):
         minor += 1
         patch = 0
         print(f"Commit: {msg} (v{current_version} => v{new_version})")
-    elif re.match(r"^PATCH:", msg, flags=re.IGNORECASE):
+    elif re.match(r"PATCH:", msg, flags=re.IGNORECASE):
         patch += 1
         print(f"Commit: {msg} (v{current_version} => v{new_version})")
 
