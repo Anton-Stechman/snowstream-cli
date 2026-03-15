@@ -86,6 +86,45 @@ class InvalidInput(Exception):
     def __init__(self, *args):
         super().__init__(*args)
 
+def get_project_dir(cwd: str | None = None) -> str:
+    """
+    Resolve the path to the `snowstream/` project subdirectory from a given working directory.
+
+    ### Inputs
+        - cwd (optional) `<type=str | None>` <default=`None`>: Base directory to resolve from.
+            Defaults to the current working directory if not provided.
+            If the path already ends in `snowstream`, it is returned as-is.
+
+    ### Returns
+        `str`: The path to the `snowstream/` subdirectory.
+
+    ### Raises
+        None
+    """
+    cwd = cwd or os.getcwd()
+    if cwd.split("\\")[-1] == "snowstream":
+        return cwd
+    return os.path.join(cwd, "snowstream")
+
+def is_valid_snowstream_project(project_dir: str | None = None) -> bool:
+    """
+    Check whether a directory contains a valid Snowstream project structure.
+
+    ### Inputs
+        - project_dir (optional) `<type=str | None>` <default=`None`>: Path to the project directory to validate. Defaults to the current working directory if not provided.
+
+    ### Returns
+        `bool`: `True` if the directory contains a `snowstream/` subdirectory with a `project.yml` file, `False` otherwise.
+
+    ### Raises
+        None
+    """
+    project_dir = project_dir or os.getcwd()
+    _check_path_0: str = get_project_dir(project_dir)
+    _check_path_1: str = os.path.join(_check_path_0, "project.yml")
+    return file_exists(_check_path_1) and dir_exists(_check_path_0)
+
+
 def dir_exists(directory: str | None = None) -> bool:
     """
     Check if a directory exists at the given path.
@@ -173,8 +212,8 @@ def terminal_print(*args: str, message_type: MessageType = MessageType.INFO) -> 
     ### Raises
         - `SnowstreamInternalError`: If `message_type` is not a valid key in the colour options map.
     """
-    for arg in args:
-        print(f"{message_type.color()}{arg}{Style.RESET_ALL}")
+    _message: str = concatenate(*args, sep=" ")
+    print(f"{message_type.color()}{_message}{Style.RESET_ALL}")
 
 def save_file(*args: str, content: Any, auto_create: bool = True, parser: Callable = str) -> bool:
     """

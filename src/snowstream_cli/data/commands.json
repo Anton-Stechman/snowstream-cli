@@ -1,0 +1,83 @@
+[
+  {
+    "command": "init"
+    , "func": "initialise"
+    , "help": "Initialise a new snowstream project"
+    , "arguments": [
+      {
+        "name": "--force"
+        , "help": "Overwrite existing project without prompting"
+        , "action": "store_true"
+        , "default": false
+      }
+      , {
+        "name": "--project-dir"
+        , "help": "Target directory to initialise project in (default: current directory)"
+        , "type": "str"
+        , "default": "cwd"
+        , "metavar": "PATH"
+      }
+    ]
+  }
+  , {
+    "command": "run"
+    , "func": "run"
+    , "help": "Run a build"
+    , "arguments": [
+      {
+        "name": "--project-dir"
+        , "help": "Path to the snowstream project directory (default: current directory)"
+        , "type": "str"
+        , "default": "cwd"
+        , "metavar": "PATH"
+      }
+      , {
+        "name": "--target-app"
+        , "help": "Target app to run (default: all)"
+        , "type": "str"
+        , "default": null
+      }
+      , {
+        "name": "--target"
+        , "help": "Target environment (default: dev)"
+        , "type": "str"
+        , "default": "dev"
+        , "choices": ["dev", "test", "prod"]
+      }
+    ]
+  }
+  , {
+    "command": "manifest"
+    , "func": "manifest"
+    , "help": "Generate snowstream manifest"
+    , "arguments": [
+      {
+        "name": "--project-dir"
+        , "help": "Path to the snowstream project directory (default: current directory)"
+        , "type": "str"
+        , "default": "cwd"
+        , "metavar": "PATH"
+      }
+      , {
+        "name": "--target-app"
+        , "help": "Target app to generate manifest for (default: all)"
+        , "type": "str"
+        , "default": null
+      }
+    ]
+  }
+  , {
+    "command": "version"
+    , "func": "version"
+    , "help": "Display library version"
+    , "arguments": [
+      {
+        "name": "--verbose"
+        , "aliases": ["-v"]
+        , "help": "Display verbose version information"
+        , "action": "store_true"
+        , "default": false
+      }
+    ]
+  }
+]

@@ -9,7 +9,12 @@ import os
 import json
 from typing import Generator
 import yaml
-from snowstream_cli._utilities._backend import dir_exists, get_file, MessageType
+from snowstream_cli._backend._util import (
+    dir_exists
+    , get_file
+    , is_valid_snowstream_project
+    , MessageType
+)
 
 def generate_snowstream_manifest(project_path: str, target_app: str | None = None) -> Generator:
     """
@@ -27,6 +32,10 @@ def generate_snowstream_manifest(project_path: str, target_app: str | None = Non
     """
     apps_root: str = os.path.join(project_path, "apps")
     manifest: dict = {"apps": []}
+    if not is_valid_snowstream_project(project_path):
+        yield f"No snowstream project detected in {project_path}.", MessageType.ERROR
+        yield "Run snowstream init to initialise a new proect", MessageType.WARN
+        return
 
     def __parse_app(app_path: str, app_name: str) -> Generator:
         app_yml_path: str = os.path.join(app_path, "app.yml")

@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [tool.setuptools.package-data]
-snowstream = ["templates/structure.yml", "templates/files/**"]
+snowstream = ["templates/structure.yml", "templates/files/**", "data/**"]
 
 [project.scripts]
 snowstream = "snowstream_cli.main:main"

@@ -15,8 +15,8 @@ from importlib.metadata import metadata
 import toml
 import yaml
 
-from snowstream_cli._utilities._deploy import generate_snowstream_manifest
-from snowstream_cli._utilities._backend import (
+from snowstream_cli._backend._deploy import generate_snowstream_manifest
+from snowstream_cli._backend._util import (
     dir_exists
     , file_exists
     , save_file
@@ -208,10 +208,12 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
             return
         yield response, status
 
+    manifest_path = os.path.join(project_dir, ".manifest")
+    if not manifest_data:
+        yield f"ERROR: Failed to create manifest in directory {manifest_path}", MessageType.ERROR
+        return
     if not isinstance(manifest_data, dict):
         raise TypeError(f"expected type {dict} got {type(manifest_data)} for {manifest_data}")
-
-    manifest_path = os.path.join(project_dir, ".manifest")
 
     if save_file(manifest_path, "snowstream_manifest.json", content=manifest_data, parser=lambda x: json.dumps(x, indent=4)):
         yield f"Manifest Created at {manifest_path}", MessageType.SUCCESS
