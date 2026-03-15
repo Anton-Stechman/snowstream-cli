@@ -1,7 +1,7 @@
 """
 Core CLI handlers for the Snowstream CLI.
 
-This module provides the implementation of the `init`, `manifest`, and `run`
+This module provides the implementation of the `version`, `init`, `manifest`, and `run`
 commands exposed by the `snowstream` console script.
 """
 
@@ -31,12 +31,23 @@ from snowstream_cli._backend._util import (
 
 def _cli_header(func: Callable, frame) -> Generator:
     """
+    Yield a formatted parameter summary and begin marker for a CLI handler.
+
+    ### Inputs
+        - func `<type=Callable>`: The handler function whose signature will be introspected to list parameter names.
+        - frame `<type=FrameType>`: The current stack frame of the calling function, used to resolve live parameter values via `f_locals`.
+
+    ### Returns
+        `Generator`: Yields `tuple[str, MessageType]` pairs — one per parameter, followed by a begin marker and separator line.
+
+    ### Raises
+        None
     """
     caller_locals = frame.f_locals
     yield f"> cmd: {func.__name__}", MessageType.INFO
     for name in inspect.signature(func).parameters:
         yield f">> {name}: {caller_locals.get(name)}", MessageType.INFO
-    yield f"\nBegin...", MessageType.INFO
+    yield "\nBegin...", MessageType.INFO
     yield "=" * 30, MessageType.INFO
 
 def version(verbose: bool = False) -> Generator:
@@ -200,7 +211,6 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
     """
     project_dir = get_project_dir(project_dir)
     target_app = target_app or "all"
-    local_vars = locals()
     manifest_data: dict | None = None
     if call_type == "cli":
         yield header("Generating snowstream_manifest.json"), MessageType.INFO
@@ -248,7 +258,7 @@ def run(project_dir: str | None = None, target_app: str | None = None, target: L
 
     yield header("Running Snowstream build"), MessageType.INFO
     yield from _cli_header(run, inspect.currentframe())
-
+    yield f"Build Target={target}", MessageType.INFO
     if not is_valid_snowstream_project(project_dir):
         yield f"ERROR: could not find snowstream project in {project_dir}", MessageType.ERROR
         yield "Run: 'snowstream init' to create a new project", MessageType.WARN
