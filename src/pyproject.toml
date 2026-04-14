@@ -19,13 +19,13 @@ dependencies = [
     , "keyring==25.7.0"
     , "PyYAML==6.0.2"
     , "toml==0.10.2"
-    , "cryptography==43.0.1"
+    , "cryptography==46.0.7"
     , "asn1crypto==1.5.1"
     , "streamlit>=1.46.0"
     , "packaging==25.0"
     , "pylint==4.0.2"
     , "mypy==1.16.0"
-    , "pytest==9.0.2"
+    , "pytest==9.0.3"
 ]
 
 [tool.setuptools.package-data]
