@@ -13,10 +13,11 @@ from snowstream_cli._backend._util import (
     dir_exists
     , get_file
     , is_valid_snowstream_project
+    , get_apps_dir
     , MessageType
 )
 
-def generate_snowstream_manifest(project_path: str, target_app: str | None = None) -> Generator:
+def generate_manifest(project_path: str, target_app: str | None = None) -> Generator:
     """
     Generate a Snowstream manifest for one or all apps in the project.
 
@@ -30,7 +31,7 @@ def generate_snowstream_manifest(project_path: str, target_app: str | None = Non
     ### Raises
         None
     """
-    apps_root: str = os.path.join(project_path, "apps")
+    apps_root: str = get_apps_dir(project_path)
     manifest: dict = {"apps": []}
     if not is_valid_snowstream_project(project_path):
         yield f"No snowstream project detected in {project_path}.", MessageType.ERROR

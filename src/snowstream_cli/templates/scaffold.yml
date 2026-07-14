@@ -26,10 +26,12 @@ root:
           git-ignore: false
       folders: null
     - name: snowstream
+      main: true
       files:
         - name: project
           type: yaml
           template: project.template
+          main: true
         - name: .gitkeep
           type: text
           template: gitkeep.template
@@ -37,6 +39,7 @@ root:
           git-ignore: false
       folders:
         - name: apps
+          apps-dir: true
           git-ignore: false
           files:
           - name: .gitkeep

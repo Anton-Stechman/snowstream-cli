@@ -14,7 +14,7 @@ It provides:
 
 ## ✅ Requirements
 
-- **Python** 3.11 (supports `>=3.11,<3.12`)
+- **Python** 3.11 (supports `>=3.13,<3.14`)
 - **pip** (recommended latest stable, e.g., 25.x)
 
 ---
@@ -63,7 +63,7 @@ snowstream manifest
 **Options:**
 
 - `--project-dir PATH` : Path to the Snowstream project directory (default: current working directory)
-- `--app NAME` : Target app to include (default: all apps)
+- `--select NAME` : Target app to include (default: all apps)
 
 ### Run a build
 
@@ -76,7 +76,7 @@ snowstream run
 **Options:**
 
 - `--project-dir PATH` : Path to the Snowstream project directory (default: current working directory)
-- `--app NAME` : Target app to run (default: all apps)
+- `--select NAME` : Target app to run (default: all apps)
 - `--target {dev,test,prod}` : Build target environment (default: dev)
 
 ---

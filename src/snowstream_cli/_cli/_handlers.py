@@ -15,7 +15,7 @@ from importlib.metadata import metadata
 import toml
 import yaml
 
-from snowstream_cli._backend._deploy import generate_snowstream_manifest
+from snowstream_cli._backend._deploy import generate_manifest
 from snowstream_cli._backend._util import (
     dir_exists
     , is_cwd
@@ -25,6 +25,7 @@ from snowstream_cli._backend._util import (
     , get_project_dir
     , terminal_prompt
     , get_file
+    , get_scaffold
     , is_valid_snowstream_project
     , resolve_template_placeholders
     , MessageType
@@ -113,14 +114,6 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
     fullpath: str = get_abs_path(project_dir, True)
     gitignore_entries: list[str] = []
 
-    def __get_scaffold(strip: str = "root") -> dict:
-        content = get_file("templates", "scaffold.yml", parser=yaml.safe_load)
-        if strip:
-            content = content[strip]
-            if not isinstance(content, dict):
-                raise TypeError(f"expected type {dict} got {type(content)} for {content}")
-        return content
-
     def __process_node(node: dict, current_path: str) -> Generator:
         type_extensions: dict[str, str | None] = {
             "yaml": "yml"
@@ -131,6 +124,8 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
 
         # process files
         for file in node.get("files") or []:
+            if not isinstance(file, dict):
+                continue
             file_name: str = file["name"]
             file_type: str = file.get("type")
             template_name: str = file.get("template")
@@ -177,7 +172,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
 
             yield from __process_node(folder, folder_path)
 
-    scaffold: dict = __get_scaffold("root")
+    scaffold: dict = get_scaffold("root")
     yield from __process_node(scaffold, fullpath)
 
     # write .gitignore once after full tree is processed
@@ -196,7 +191,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
 
 def manifest(project_dir: str | None = None, target_app: str | None = None, call_type: Literal["cli", "internal"] = "cli") -> Generator:
     """
-    Generate a snowstream_manifest.json file for the given project directory and target app.
+    Generate a manifest.json file for the given project directory and target app.
 
     ### Inputs
         - project_dir (optional) `<type=str | None>` <default=`None`>: Path to the project directory. Defaults to the current working directory if not provided.
@@ -208,16 +203,16 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
         `Generator`: Yields `tuple[str, MessageType]` pairs.
 
     ### Raises
-        - `TypeError`: If `generate_snowstream_manifest` does not return a `dict` as its final response.
+        - `TypeError`: If `generate_manifest` does not return a `dict` as its final response.
     """
     project_dir = get_project_dir(project_dir)
     target_app = target_app or "all"
     manifest_data: dict | None = None
     if call_type == "cli":
-        yield header("Generating snowstream_manifest.json"), MessageType.INFO
+        yield header("Generating manifest.json"), MessageType.INFO
         yield from _cli_header(manifest, inspect.currentframe())
 
-    for response, status in generate_snowstream_manifest(project_dir, target_app):
+    for response, status in generate_manifest(project_dir, target_app):
         if isinstance(response, dict):
             manifest_data = response
             break
@@ -228,12 +223,12 @@ def manifest(project_dir: str | None = None, target_app: str | None = None, call
 
     manifest_path = os.path.join(project_dir, ".manifest")
     if not manifest_data:
-        yield f"ERROR: Failed to create manifest in directory {manifest_path}", MessageType.ERROR
+        # yield f"No apps found in project {project_dir}\\", MessageType.INFO
         return
     if not isinstance(manifest_data, dict):
         raise TypeError(f"expected type {dict} got {type(manifest_data)} for {manifest_data}")
 
-    if save_file(manifest_path, "snowstream_manifest.json", content=manifest_data, parser=lambda x: json.dumps(x, indent=4)):
+    if save_file(manifest_path, "manifest.json", content=manifest_data, parser=lambda x: json.dumps(x, indent=4)):
         yield f"Manifest Created at {manifest_path}", MessageType.SUCCESS
         return
 
@@ -264,7 +259,7 @@ def run(project_dir: str | None = None, target_app: str | None = None, target: L
         yield f"ERROR: could not find snowstream project in {project_dir}", MessageType.ERROR
         yield "Run: 'snowstream init' to create a new project", MessageType.WARN
         return
-    yield "Building snowstream_manifest.json", MessageType.INFO
+    yield "Building manifest.json", MessageType.INFO
     for response, status in manifest(project_dir, target_app, "internal"):
         yield response, status
     yield "Complete!", MessageType.SUCCESS
