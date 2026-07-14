@@ -142,6 +142,25 @@ def dir_exists(directory: str | None = None) -> bool:
         return False
     return os.path.isdir(directory)
 
+def is_cwd(directory: str | None = None) -> bool:
+    """
+    Check whether a given directory resolves to the current working directory.
+
+    ### Inputs
+        - directory (optional) `<type=str | None>` <default=`None`>: Path to compare against the current working directory. Returns `False` if `None` or empty.
+
+    ### Returns
+        `bool`: `True` if `directory` resolves to the same path as `os.getcwd()` (case-insensitive, normalized), `False` otherwise.
+
+    ### Raises
+        None
+    """
+    if not directory:
+        return False
+    incoming_branch: str = os.path.normcase(os.path.normpath(directory))
+    cwd_branch: str = os.path.normcase(os.path.normpath(os.getcwd()))
+    return incoming_branch == cwd_branch
+
 def header(text: str) -> str:
     """
     Uniformed CLI menu header

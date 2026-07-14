@@ -18,6 +18,7 @@ import yaml
 from snowstream_cli._backend._deploy import generate_snowstream_manifest
 from snowstream_cli._backend._util import (
     dir_exists
+    , is_cwd
     , save_file
     , header
     , get_abs_path
@@ -95,7 +96,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
         raise ValueError("No value provided for parameter `project_dir`")
     yield header("Initialising New Snowstream Project"), MessageType.INFO
     yield from _cli_header(initialise, inspect.currentframe())
-    if dir_exists(project_dir):
+    if dir_exists(project_dir) and not is_cwd(project_dir):
         if force:
             shutil.rmtree(project_dir)
         else:
