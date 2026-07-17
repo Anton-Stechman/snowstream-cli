@@ -71,16 +71,6 @@ class DirectoryNotFoundError(FileNotFoundError):
     def __init__(self, *args):
         super().__init__(*args)
 
-class DirectoryNotFoundError(FileNotFoundError):
-    """
-    Raised when a target directory does not exist and auto-creation is not enabled.
-
-    ### Inherits
-        - `FileNotFoundError`
-    """
-    def __init__(self, *args):
-        super().__init__(*args)
-
 class ProjectNotFoundError(FileNotFoundError):
     """
     Raised when a vliad snowstream prroject can not be located.
@@ -210,16 +200,29 @@ def get_apps_dir(project_dir: str | None = None) -> str:
     if _apps_path_parts is None:
         raise ProjectNotFoundError(
             "No apps directory defined in scaffold structure"
-            f" (missing `apps-dir: true` marker on a folder)"
+            , " (missing `apps-dir: true` marker on a folder)"
         )
 
     return os.path.join(get_project_dir(project_dir), *_apps_path_parts)
 
+def get_scaffold(strip: str | None = None, root_node: str = "root") -> dict:
+    """
+    get snowstream scaffold
 
+    ### Inputs
+        - strip (optional) `<type=str | None>` <default=`None`>: target key value from scaffold.yml
+        - root_node (optional) `<type=str>` <default=`"root"`>: root node from scaffold.yml
+            (currently this is "root", param added for future flexibility)
 
+    ### Returns
+        `dict`: dictionary object from scaffold.yml.
 
-def get_scaffold(strip: str = "root") -> dict:
-    content = get_file("templates", "scaffold.yml", parser=yaml.safe_load)
+    ### Raises
+        `TypeError`: if the stripped content is not of type `dict`.
+
+    """
+    content: dict = get_file("templates", "scaffold.yml", parser=yaml.safe_load)
+    content: dict = content[root_node]
     if strip:
         content = content[strip]
         if not isinstance(content, dict):
