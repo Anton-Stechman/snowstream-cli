@@ -6,4 +6,4 @@ This package exposes the core CLI handlers and utility helpers used by the
 """
 
 from ._cli._handlers import *
-from ._utilities._backend import *
+from ._backend._util import *

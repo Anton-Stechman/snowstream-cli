@@ -4,7 +4,7 @@ $VENV_NAME = ".venv"
 $VENV_PATH = Join-Path -Path "." -ChildPath $VENV_NAME
 $VENV_PYTHON = Join-Path -Path $VENV_PATH -ChildPath "Scripts\python.exe"
 $ACTIVATE_SCRIPT = Join-Path $VENV_PATH "Scripts\Activate.ps1"
-$PY_VERSION = "3.11"
+$PY_VERSION = "3.13"
 
 $PY_REQS = ".\requirements.txt"
 

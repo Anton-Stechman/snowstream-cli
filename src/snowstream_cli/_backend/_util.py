@@ -24,6 +24,13 @@ COLOR_OPTIONS: dict[str, str] = {
     , "success": Fore.GREEN
 }
 
+FILE_EXTENSIONS: dict[str, str | None] = {
+    "yaml": "yml"
+    , "toml": "toml"
+    , "json": "json"
+    , "text": None
+}
+
 class MessageType(Enum):
     """
     MessageType: Used for defining which color option to use for Terminal text
@@ -64,6 +71,16 @@ class DirectoryNotFoundError(FileNotFoundError):
     def __init__(self, *args):
         super().__init__(*args)
 
+class ProjectNotFoundError(FileNotFoundError):
+    """
+    Raised when a vliad snowstream prroject can not be located.
+
+    ### Inherits
+        - `FileNotFoundError`
+    """
+    def __init__(self, *args):
+        super().__init__(*args)
+
 class SnowstreamInternalError(TypeError, ValueError, Exception):
     """
     Raised when an internal Snowstream error occurs, typically due to an unexpected type or value.
@@ -86,6 +103,132 @@ class InvalidInput(Exception):
     def __init__(self, *args):
         super().__init__(*args)
 
+def get_project_dir(cwd: str | None = None) -> str:
+    """
+    Resolve the path to the `snowstream/` project subdirectory from a given working directory.
+
+    ### Inputs
+        - cwd (optional) `<type=str | None>` <default=`None`>: Base directory to resolve from.
+            Defaults to the current working directory if not provided.
+            If the path already ends in `snowstream`, it is returned as-is.
+
+    ### Returns
+        `str`: The path to the `snowstream/` subdirectory.
+
+    ### Raises
+        None
+    """
+    cwd = cwd or os.getcwd()
+    if cwd.split("\\")[-1] == "snowstream":
+        return cwd
+    return os.path.join(cwd)
+
+def is_valid_snowstream_project(project_dir: str | None = None) -> bool:
+    """
+    Check whether a directory contains a valid Snowstream project structure.
+
+    ### Inputs
+        - project_dir (optional) `<type=str | None>` <default=`None`>: Path to the project directory to validate. Defaults to the current working directory if not provided.
+
+    ### Returns
+        `bool`: `True` if the file marked `main: true` under the scaffold's `main: true` folder exists at its expected location, `False` if that file is missing on disk.
+
+    ### Raises
+        - `TypeError`: If the loaded scaffold definition is not a `dict`.
+        - `ProjectNotFoundError`: If the scaffold definition contains no folder/file pair marked `main: true`, or no such project exists at `project_dir`.
+    """
+    _scaff: dict[list, dict] = get_scaffold()
+    if not isinstance(_scaff, dict):
+        raise TypeError(f"Expected Type {dict} got type {type((_scaff))}")
+    _folders: list[dict] = _scaff.get("folders", [])
+    for _f in _folders:
+        if not isinstance(_f, dict):
+            continue
+        if _f.get("main", False): # is main folder [main: true]
+            _folder_name: str = _f["name"]
+            _folder_files: list[dict] = _f.get("files", [])
+            for _ff in _folder_files:
+                if not isinstance(_ff, dict):
+                    continue
+                if _ff.get("main", False): # is main file [main: true]
+                    _folder_file_name: str = _ff["name"]
+                    _folder_file_type: str = _ff["type"]
+                    _ext: str = FILE_EXTENSIONS[_folder_file_type]
+                    _folder_file_name: str = concatenate(_folder_file_name, _ext, sep=".", ifnone="skip")
+                    return file_exists(get_project_dir(project_dir), _folder_name, _folder_file_name)
+    raise ProjectNotFoundError(
+        "No valid snowstream project found in --project-dir"
+        , f" {get_project_dir(project_dir)} run `snowstream init --prroject-dir {get_project_dir(project_dir)}`"
+        , " to initialise a new project"
+    )
+
+def get_apps_dir(project_dir: str | None = None) -> str:
+    """
+    Locate the "apps" directory as defined in the scaffold structure.
+
+    ### Inputs
+        - project_dir (optional) `<type=str | None>` <default=`None`>: Path to the project directory to resolve the apps directory within. Defaults to the current working directory if not provided.
+
+    ### Returns
+        `str`: Absolute path to the folder marked `apps-dir: true` in the scaffold definition.
+
+    ### Raises
+        - `TypeError`: If the loaded scaffold definition is not a `dict`.
+        - `ProjectNotFoundError`: If the scaffold definition contains no folder marked `apps-dir: true`.
+    """
+    def __recursive_lookup(folders: list[dict], path_parts: list[str]) -> list[str] | None:
+        for _f in folders:
+            if not isinstance(_f, dict):
+                continue
+            _name: str = _f["name"]
+            _current_path: list[str] = path_parts + [_name]
+            if _f.get("apps-dir", False):
+                return _current_path
+            __inner_folders: list[dict] = _f.get("folders") or []
+            _found: list[str] | None = __recursive_lookup(__inner_folders, _current_path)
+            if _found is not None:
+                return _found
+        return None
+
+    _scaff: dict = get_scaffold()
+    if not isinstance(_scaff, dict):
+        raise TypeError(f"Expected Type {dict} got type {type(_scaff)}")
+
+    _folders: list[dict] = _scaff.get("folders", [])
+    _apps_path_parts: list[str] | None = __recursive_lookup(_folders, [])
+
+    if _apps_path_parts is None:
+        raise ProjectNotFoundError(
+            "No apps directory defined in scaffold structure"
+            , " (missing `apps-dir: true` marker on a folder)"
+        )
+
+    return os.path.join(get_project_dir(project_dir), *_apps_path_parts)
+
+def get_scaffold(strip: str | None = None, root_node: str = "root") -> dict:
+    """
+    get snowstream scaffold
+
+    ### Inputs
+        - strip (optional) `<type=str | None>` <default=`None`>: target key value from scaffold.yml
+        - root_node (optional) `<type=str>` <default=`"root"`>: root node from scaffold.yml
+            (currently this is "root", param added for future flexibility)
+
+    ### Returns
+        `dict`: dictionary object from scaffold.yml.
+
+    ### Raises
+        `TypeError`: if the stripped content is not of type `dict`.
+
+    """
+    content: dict = get_file("templates", "scaffold.yml", parser=yaml.safe_load)
+    content: dict = content[root_node]
+    if strip:
+        content = content[strip]
+        if not isinstance(content, dict):
+            raise TypeError(f"expected type {dict} got {type(content)} for {content}")
+    return content
+
 def dir_exists(directory: str | None = None) -> bool:
     """
     Check if a directory exists at the given path.
@@ -103,6 +246,25 @@ def dir_exists(directory: str | None = None) -> bool:
         return False
     return os.path.isdir(directory)
 
+def is_cwd(directory: str | None = None) -> bool:
+    """
+    Check whether a given directory resolves to the current working directory.
+
+    ### Inputs
+        - directory (optional) `<type=str | None>` <default=`None`>: Path to compare against the current working directory. Returns `False` if `None` or empty.
+
+    ### Returns
+        `bool`: `True` if `directory` resolves to the same path as `os.getcwd()` (case-insensitive, normalized), `False` otherwise.
+
+    ### Raises
+        None
+    """
+    if not directory:
+        return False
+    incoming_branch: str = os.path.normcase(os.path.normpath(directory))
+    cwd_branch: str = os.path.normcase(os.path.normpath(os.getcwd()))
+    return incoming_branch == cwd_branch
+
 def header(text: str) -> str:
     """
     Uniformed CLI menu header
@@ -117,7 +279,7 @@ def header(text: str) -> str:
         None
     """
     banner: str = "=" * 40
-    return f"{banner}\n{text}\n{banner}"
+    return f"{Fore.CYAN}{banner}\n{text}\n{banner}{Fore.WHITE}"
 
 def file_exists(*args, filepath: str | None = None) -> bool:
     """
@@ -173,8 +335,8 @@ def terminal_print(*args: str, message_type: MessageType = MessageType.INFO) -> 
     ### Raises
         - `SnowstreamInternalError`: If `message_type` is not a valid key in the colour options map.
     """
-    for arg in args:
-        print(f"{message_type.color()}{arg}{Style.RESET_ALL}")
+    _message: str = concatenate(*args, sep=" ")
+    print(f"{message_type.color()}{_message}{Style.RESET_ALL}")
 
 def save_file(*args: str, content: Any, auto_create: bool = True, parser: Callable = str) -> bool:
     """
@@ -320,7 +482,7 @@ def resolve_template_placeholders(content: str) -> str:
 
     return content  # returned content has no {{ }} tokens remaining
 
-def concatenate(*args: Any, sep: str | None = None) -> str:
+def concatenate(*args: Any, sep: str | None = None, ifnone: Literal["empty", "skip"] = "empty") -> str:
     """
     Join a sequence of strings with an optional separator.
 
@@ -335,4 +497,6 @@ def concatenate(*args: Any, sep: str | None = None) -> str:
         None
     """
     sep = sep if sep else ""
-    return sep.join([str(arg) for arg in args])
+    if ifnone == "empty":
+        return sep.join([str(arg if arg else "") for arg in args])
+    return sep.join([str(arg) for arg in args if arg is not None])

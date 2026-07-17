@@ -12,20 +12,39 @@ root:
           type: yaml
           template: profile.template
           git-ignore: false
+        - name: .gitkeep
+          type: text
+          template: gitkeep.template
+          git-ignore: false
       folders: null
     - name: .manifest
       git-ignore: true
-      files: null
+      files:
+        - name: .gitkeep
+          type: text
+          template: gitkeep.template
+          git-ignore: false
       folders: null
     - name: snowstream
+      main: true
       files:
         - name: project
           type: yaml
           template: project.template
+          main: true
+        - name: .gitkeep
+          type: text
+          template: gitkeep.template
+          git-ignore: false
           git-ignore: false
       folders:
         - name: apps
+          apps-dir: true
           git-ignore: false
-          files: null
+          files:
+          - name: .gitkeep
+            type: text
+            template: gitkeep.template
+            git-ignore: false
           folders: null
       git-ignore: false

@@ -1,16 +1,20 @@
 import os
+import subprocess
+
+PYEXE: str = r".venv\Scripts\python.exe"
 
 def setup_project():
-    os.system("powershell -ExecutionPolicy Bypass -File .tools/setup.ps1")
+    subprocess.run("powershell -ExecutionPolicy Bypass -File .tools/setup.ps1", shell=True)
+    subprocess.run([PYEXE, "-m", "pip", "install", "-e", "./src"], check=True)
 
 def run_pytest():
-    os.system("pytest")
+    subprocess.run([PYEXE, "-m", "pytest"], check=True)
 
 def run_pylint():
-    os.system("pylint src/")
+    subprocess.run([PYEXE, "-m", "pylint src/"], check=True)
 
 def build_package():
-    os.system("python -m build ./src")
+    subprocess.run([PYEXE, "-m", "python -m build ./src"], check=True)
 
 MENU_ITEMS: list[dict] = [
     {"name": "Run Setup", "action": setup_project}

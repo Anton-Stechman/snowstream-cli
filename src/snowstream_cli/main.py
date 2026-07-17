@@ -11,12 +11,92 @@ Available commands:
 """
 
 import os
+import json
 import subprocess
 import argparse
 from snowstream_cli._cli._handlers import initialise, run, manifest, version
-from snowstream_cli._utilities._backend import terminal_print
+from snowstream_cli._backend._util import terminal_print, get_file, MessageType
+
+COMMAND_MAPPING: dict = {
+    "function": {
+        "initialise": initialise
+        , "run": run
+        , "manifest": manifest
+        , "version": version
+    }
+    , "defaults": {
+        "cwd": os.getcwd
+    }
+    , "types": {
+        "str": str
+        , "bool": bool
+        , "int": int
+        , "list": list
+        , "dict": dict
+    }
+}
+
 
 def main() -> None:
+    """
+    Dynamic CLI handler using commands.json metadata
+    """
+    def __get_arg(arg: dict | None) -> tuple:
+        if not arg or not isinstance(arg, dict):
+            return [], {}
+        arg_names = [arg["name"]]
+        if "aliases" in arg:
+            arg_names += arg["aliases"]
+        arg_kwargs = {k: v for k, v in arg.items() if k not in ("name", "aliases")}
+        # Handle type and default special cases
+        if "type" in arg_kwargs:
+            arg_kwargs["type"] = COMMAND_MAPPING["types"].get(arg_kwargs["type"], str)
+        if "default" in arg_kwargs and isinstance(arg_kwargs["default"], str):
+            _resolved = COMMAND_MAPPING["defaults"].get(arg_kwargs["default"], arg_kwargs["default"])
+            arg_kwargs["default"] = _resolved() if callable(_resolved) else _resolved
+        return arg_names, arg_kwargs
+
+    command_metadata = get_file("data", "commands.json", parser=json.loads)
+    subprocess.run(["cls"], check=True, shell=True)
+    parser = argparse.ArgumentParser(
+        prog="snowstream"
+        , description="Snowstream CLI"
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    # Build subparsers and arguments from metadata
+    for cmd in command_metadata:
+        if not isinstance(cmd, dict):
+            continue
+        subparser = subparsers.add_parser(cmd["command"], help=cmd.get("help", ""))
+        for arg in cmd.get("arguments", []):
+            arg_names, arg_kwargs = __get_arg(arg)
+            subparser.add_argument(*arg_names, **arg_kwargs)
+    args = parser.parse_args()
+
+    for command in command_metadata:
+        if not isinstance(command, dict):
+            terminal_print(
+                "Warning: Internal Process error"
+                , f"Expected type {dict}, got {type(command)} for value {command}"
+                , message_type=MessageType.WARN
+            )
+            continue
+        if args.command == command["command"]:
+            func = COMMAND_MAPPING["function"][command["func"]]
+            for response, status in func(**{k: v for k, v in vars(args).items() if k != "command"}):
+                terminal_print(response, message_type=status)
+            return
+
+    # Dispatch to the correct handler
+    if args.command is None:
+        parser.print_help()
+        return
+
+
+
+
+def deprecated_main() -> None:
     """
     Main CLI handler
     """
