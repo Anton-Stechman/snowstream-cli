@@ -172,7 +172,7 @@ def initialise(force: bool | None = None, project_dir: str | None = None) -> Gen
 
             yield from __process_node(folder, folder_path)
 
-    scaffold: dict = get_scaffold("root")
+    scaffold: dict = get_scaffold()
     yield from __process_node(scaffold, fullpath)
 
     # write .gitignore once after full tree is processed
